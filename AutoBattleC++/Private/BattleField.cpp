@@ -1,24 +1,22 @@
-#include "../Public/Grid.h"
 #include "../Public/BattleField.h"
 #include "../Public/Character.h"
 #include <iostream>
 
-BattleField::BattleField(): GameGrid(new Grid())
-{}
+BattleField::BattleField() = default;
 
 void BattleField::Setup()
 {
     while(bGameRunning)
     {
-        std::unique_ptr<Character> TeamAPlayer{new Character()};
-        std::unique_ptr<Character> TeamBPlayer{new Character()};
-        CreateGrid(*GameGrid);
+        std::unique_ptr<Character> TeamAPlayer{std::make_unique<Character>()};
+        std::unique_ptr<Character> TeamBPlayer{std::make_unique<Character>()};
+        CreateGrid();
         std::cout << "Set First Player Stats: " << std::endl;
         CreateCharacter(*TeamAPlayer);
         std::cout << "Set Second Player Stats: " << std::endl;
         CreateCharacter(*TeamBPlayer);
-        TeamAPlayer->SetPlayerPosition(GameGrid->GetRoot());
-        TeamBPlayer->SetPlayerPosition(GameGrid->GetTail());
+        TeamAPlayer->SetPlayerPosition(0,0);
+        TeamBPlayer->SetPlayerPosition(2,2);
         TeamAPlayer->SetTarget(*TeamBPlayer);
         TeamBPlayer->SetTarget(*TeamAPlayer);
         CharacterList.push_front(TeamAPlayer.get());
@@ -27,7 +25,7 @@ void BattleField::Setup()
     }
 }
 
-void BattleField::CreateGrid(Grid& OutGrid)
+void BattleField::CreateGrid()
 {
     int X;
     int Y;
@@ -57,11 +55,23 @@ void BattleField::CreateGrid(Grid& OutGrid)
     if ((X <= 1 && Y <= 1) || (X == 0 || Y == 0))
     {
         std::cout << "Invalid Height or Lenght. Try again" << std::endl;
-        CreateGrid(OutGrid);
+        CreateGrid(); //change this
     }
     else
     {
-        OutGrid.PopulateGrid(X, Y);
+        Grid.resize(X, std::vector<GridNode>(Y));
+        int x = 0; //Check if this is really needed
+        for(std::vector<GridNode>& Row : Grid)
+        {
+            int y = 0;
+            for(GridNode& GN : Row)
+            {
+                GN.SetGridPosition(x,y);
+                ++y;
+            }
+            ++x;
+            std::cout << std::endl;
+        }
     }
 }
 
@@ -130,20 +140,21 @@ void BattleField::CreateCharacter(Character& NewChar)
         std::cin >> Icon;
     }
     
-    NewChar.SetHealth(Health);
+    NewChar.SetHealth(10);
     NewChar.SetBaseDamage(Damage);
     NewChar.SetDamageMultiplier(DamageMultiplier);
     NewChar.SetMovement(Movements);
     NewChar.SetIconAndName(Icon);
     NumberOfPlayers++;
     NewChar.SetIndex(NumberOfPlayers);
-
+    NewChar.Grid = &Grid;
+    
     std::cout << "Player Created!" << std::endl << std::endl;
 }
 
 void BattleField::StartGame()
 {
-    GameGrid->DrawGrid();
+    DrawGrid();
     bool IsRunning = true;
 
     char WaitInput;
@@ -184,8 +195,11 @@ void BattleField::StartGame()
 
 void BattleField::ClearGame()
 {
-    delete GameGrid;
-    GameGrid = nullptr;
+    for(std::vector<GridNode> Row : Grid)
+    {
+        Row.clear();
+    }
+    Grid.clear();
     CharacterList.clear();
 }
 
@@ -200,10 +214,41 @@ bool BattleField::HandleTurn() const
         }
 
         a->ExecuteTurn();
-        GameGrid->DrawGrid();
+        DrawGrid();
         std::cout << "Enter any key to start the next turn..." << std::endl;
         std::cin >> WaitInput;
     }
 
     return true;
+}
+
+void BattleField::DrawGrid() const
+{
+    int x = 0;
+    for(const std::vector<GridNode>& Row : Grid)
+    {
+        int y = 0;
+        for(const GridNode& GN : Row)
+        {
+            if(GN.IsNodeOccupied())
+            {
+                if (GN.GetCharInNode()->GetIsDead())
+                {
+                    std::cout << "[" << "X" << "] ";
+                }
+                else
+                {
+                    std::cout << "[" << GN.GetCharInNode()->GetIcon() << "] ";
+                }
+            }
+            else
+            {
+                std::cout << "[ " << x << ", " << y << " ] ";
+            }
+            ++y;
+        }
+        ++x;
+        std::cout << std::endl;
+    }
+    std::cout << "---------------------------------------------------------------- " << std::endl;
 }

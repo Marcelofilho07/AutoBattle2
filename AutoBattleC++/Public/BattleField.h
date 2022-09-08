@@ -1,14 +1,13 @@
 #pragma once
+#include "../Public/GridNode.h"
 #include <forward_list>
-#include <memory>
+#include <vector>
 
-class Grid;
 class Character;
-class Types;
 
 class BattleField
 {
-	Grid* GameGrid = nullptr;
+	std::vector<std::vector<GridNode>> Grid;
 	std::forward_list<Character*> CharacterList;
 	int NumberOfPlayers = 0;
 	bool bGameRunning = true;
@@ -19,7 +18,7 @@ public:
 	void Setup();
 
 private:
-	void CreateGrid(Grid& OutGrid);
+	void CreateGrid();
 
 	void CreateCharacter(Character& NewChar);
 
@@ -28,5 +27,7 @@ private:
 	void ClearGame();
 
 	bool HandleTurn() const;
+
+	void DrawGrid() const;
 };
 

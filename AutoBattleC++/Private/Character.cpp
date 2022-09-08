@@ -1,24 +1,7 @@
-#include "../Public/Grid.h"
 #include "../Public/GridNode.h"
 #include "../Public/Character.h"
 
-Character::Character()
-{
-    Health = 1.f;
-    MaxHealth = Health;
-    BaseDamage = 0.f;
-    DamageMultiplier = 1.f;
-    EmpowerCharges = 1;
-    Movement = 0;
-    InvulnerabilityCharges = 1;
-    Target = nullptr;
-    IsInvulnerable = false;
-    Name = '0';
-    IsEmpower = false;
-    Index = 0;
-    Icon = '0';
-    GridPosition = nullptr;
-}
+Character::Character() = default;
 
 void Character::SetHealth(const float InHealth)
 {
@@ -64,64 +47,66 @@ void Character::TakeDamage(const float InAmount)
         Invulnerable();
         Empower();
     }
-
-	if (Health <= 0) 
-	{
-		Die();
-	}
-}
-
-
-void Character::Die() 
-{
-    //IsDead = true;
 }
 
 void Character::Walk(int RightSteps, int UpSteps) 
 {
     int Moves = Movement;
+    const int GridWidth = static_cast<int>((*Grid).size()) - 1;
+    const int GridHeight = static_cast<int>((*Grid)[0].size()) - 1;
     if (RightSteps > 0)
     {
-        for (int i = 0; i < RightSteps && Moves > 0; i++)
+        for (int i = 0; i < RightSteps && Moves > 0 && CharacterPositionY < GridWidth; i++)
         {
-            SetPlayerPosition(GridPosition->GetRightNode());
+            MoveTo(CharacterPositionX,CharacterPositionY + 1);
             Moves--;
         }
     }
     else
     {
-        for (int i = 0; i < -RightSteps && Moves > 0; i++)
+        for (int i = 0; i < -RightSteps && Moves > 0 && CharacterPositionY > 0; i++)
         {
-            SetPlayerPosition(GridPosition->GetLeftNode());
+            MoveTo(CharacterPositionX,CharacterPositionY - 1);
             Moves--;
         }
     }
 
     if (UpSteps > 0)
     {
-        for (int i = 0; i < UpSteps && Moves > 0; i++)
+        for (int i = 0; i < UpSteps && Moves > 0 && CharacterPositionX < GridHeight; i++)
         {
-            SetPlayerPosition(GridPosition->GetUpNode());
+            MoveTo(CharacterPositionX + 1,CharacterPositionY);
             Moves--;
         }
     }
     else
     {
-        for (int i = 0; i < -UpSteps && Moves > 0; i++)
+        for (int i = 0; i < -UpSteps && Moves > 0 && CharacterPositionX > 0; i++)
         {
-            SetPlayerPosition(GridPosition->GetDownNode());
+            MoveTo(CharacterPositionX - 1,CharacterPositionY);
             Moves--;
         }
     }
 }
 
-void Character::SetPlayerPosition(GridNode* Node)
+void Character::MoveTo(const int InX, const int InY)
 {
-    if (Node != nullptr && !Node->IsNodeOccupied())
+    if (!(*Grid)[InX][InY].IsNodeOccupied())
     {
-        GridPosition->ClearNode();
-        GridPosition = Node;
-        Node->SetCharacter(this);
+        (*Grid)[CharacterPositionX][CharacterPositionY].ClearNode();
+        CharacterPositionX = InX;
+        CharacterPositionY = InY;
+        (*Grid)[CharacterPositionX][CharacterPositionY].SetCharacterInNode(*this);
+    }
+}
+
+void Character::SetPlayerPosition(const int InX, const int InY)
+{
+    if (!(*Grid)[InX][InY].IsNodeOccupied())
+    {
+        CharacterPositionX = InX;
+        CharacterPositionY = InY;
+        (*Grid)[CharacterPositionX][CharacterPositionY].SetCharacterInNode(*this);
     }
 }
 
@@ -151,25 +136,28 @@ void Character::ExecuteTurn()
 {
     if (!GetIsDead())
     {
-        if (CheckCloseToTarget())
+        if (IsTargetInRange())
         {
             Attack();
         }
         else
         {
-            Walk(Target->GridPosition->GetNodePosition().x - GridPosition->GetNodePosition().x, GridPosition->GetNodePosition().y - Target->GridPosition->GetNodePosition().y);
+            Walk(Target->CharacterPositionY - CharacterPositionY, Target->CharacterPositionX - CharacterPositionX);
         }
 
-        if (CheckCloseToTarget())
+        if (IsTargetInRange())
         {
             Attack();
         }
     }
 }
 
-bool Character::CheckCloseToTarget()
+bool Character::IsTargetInRange() const
 {
-    if (GridPosition->GetUpNode()->IsNodeOccupied() || GridPosition->GetDownNode()->IsNodeOccupied() || GridPosition->GetRightNode()->IsNodeOccupied() || GridPosition->GetLeftNode()->IsNodeOccupied())
+    if ((Target->CharacterPositionX - CharacterPositionX == 1  && Target->CharacterPositionY - CharacterPositionY == 0) ||
+        (Target->CharacterPositionX - CharacterPositionX == 0  && Target->CharacterPositionY - CharacterPositionY == 1) ||
+        (Target->CharacterPositionX - CharacterPositionX == -1  && Target->CharacterPositionY - CharacterPositionY == 0) ||
+        (Target->CharacterPositionX - CharacterPositionX == 0  && Target->CharacterPositionY - CharacterPositionY == -1))
     {
         return true;
     }
@@ -193,5 +181,5 @@ void Character::Attack()
 
 void Character::SetTarget(Character& NewTarget)
 {
-    //Target = NewTarget;
+    Target = &NewTarget;
 }

@@ -1,40 +1,35 @@
 #pragma once
+#include <vector>
 
-class Types;
-class Grid;
+class GridNode;
 
 class Character
 {
 private:
     int Index = -1;
-
     int Movement = 0;
-
+    int EmpowerCharges = 0;
+    int InvulnerabilityCharges = 0;
+    
     float Health = 1.f;
-
     float MaxHealth = Health;
-
     float BaseDamage = 1.f;
-
     float DamageMultiplier = 1.f;
 
     bool IsInvulnerable = false;
-
     bool IsEmpower = false;
-
-    int EmpowerCharges = 0;
-
-    int InvulnerabilityCharges = 0;
-
+    
     char Icon = '0';
-
     char Name = '0';
 
     Character* Target = nullptr;
 
-    GridNode* GridPosition = nullptr;
 
 public:
+    int CharacterPositionX = 0;
+    int CharacterPositionY = 0;
+    std::vector<std::vector<GridNode>>* Grid = nullptr;
+    
     Character();
 
     void SetHealth(const float InHealth);
@@ -49,24 +44,24 @@ public:
 
     void SetTarget(Character& NewTarget);
 
-    void SetPlayerPosition(GridNode* Node);
+    void SetPlayerPosition(const int InX, const int InY);
 
     void SetIndex(const int InIndex);
 
-    inline char GetIcon() { return Icon; }
+    inline char GetIcon() const { return Icon; }
 
-    inline bool GetIsDead() { return Health > 0; }
+    inline bool GetIsDead() const { return Health < 0; }
 
     void ExecuteTurn();
 
 private:
     void TakeDamage(const float InAmount);
 
-    void Die();
-
     void Walk(int RightSteps, int UpSteps);
 
-    bool CheckCloseToTarget();
+    void MoveTo(const int InX, const int InY);
+
+    bool IsTargetInRange() const;
 
     void Attack();
 

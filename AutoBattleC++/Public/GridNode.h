@@ -31,7 +31,9 @@ public:
         GridPosition.y = InY;
     }
 
+    void SetCharacterInNode(Character& InCharacter);
+
     void ClearNode();
 
-    bool IsNodeOccupied();
+    bool IsNodeOccupied() const;
 };
