@@ -6,188 +6,128 @@ BattleField::BattleField() = default;
 
 void BattleField::Setup()
 {
-    while(bGameRunning)
+    while(bIsGameRunning)
     {
-        std::unique_ptr<Character> TeamAPlayer{std::make_unique<Character>()};
-        std::unique_ptr<Character> TeamBPlayer{std::make_unique<Character>()};
         CreateGrid();
-        std::cout << "Set First Player Stats: " << std::endl;
-        CreateCharacter(*TeamAPlayer);
-        std::cout << "Set Second Player Stats: " << std::endl;
-        CreateCharacter(*TeamBPlayer);
-        TeamAPlayer->SetPlayerPosition(0,0);
-        TeamBPlayer->SetPlayerPosition(2,2);
-        TeamAPlayer->SetTarget(*TeamBPlayer);
-        TeamBPlayer->SetTarget(*TeamAPlayer);
-        CharacterList.push_front(TeamAPlayer.get());
-        CharacterList.push_front(TeamBPlayer.get());
+        bool bIsInvalidInput = true;
+        while(bIsInvalidInput)
+        {
+            int NewCharInput;
+            std::cout << "Number of Characters: " << NumberOfCharacters << std::endl;
+            ShowMsgReceiveInput(NewCharInput, "Do you want to add a new character?(1- Yes, 0- No): ", "Please input a number.");
+            if(NewCharInput)
+            {
+                CreateCharacter();
+            }
+            else
+            {
+                bIsInvalidInput = false;
+            }
+        }
+        
+        for(const std::shared_ptr<Character>& ch : CharacterList)
+        {
+            std::cout << ch->GetIcon() << std::endl;
+        }
         StartGame();
     }
+}
+
+void BattleField::AddDeadCount()
+{
+    ++NumberOfCharactersDead;
 }
 
 void BattleField::CreateGrid()
 {
     int X;
     int Y;
-
-    std::cout << "Set Grid Lenght: " << std::endl;
-
-    std::cin >> X;    
-    while (std::cin.fail()) 
+    bool bInvalidInput = true;
+    while(bInvalidInput)
     {
-        std::cout << "Please input a number" << std::endl;
-        std::cin.clear();
-        std::cin.ignore(256, '\n');
-        std::cin >> X;
-    }
+        ShowMsgReceiveInput(X, "Set Grid Width: ", "Please input a number.");
+        ShowMsgReceiveInput(Y, "Set Grid Height: ", "Please input a number.");
 
-    std::cout << "Set Grid Height: " << std::endl;
-
-    std::cin >> Y;    
-    while (std::cin.fail()) 
-    {
-        std::cout << "Please input a number" << std::endl;
-        std::cin.clear();
-        std::cin.ignore(256, '\n');
-        std::cin >> Y;
-    }
-
-    if ((X <= 1 && Y <= 1) || (X == 0 || Y == 0))
-    {
-        std::cout << "Invalid Height or Lenght. Try again" << std::endl;
-        CreateGrid(); //change this
-    }
-    else
-    {
-        Grid.resize(X, std::vector<GridNode>(Y));
-        int x = 0; //Check if this is really needed
-        for(std::vector<GridNode>& Row : Grid)
+        if ((X <= 1 && Y <= 1) || (X == 0 || Y == 0))
         {
-            int y = 0;
-            for(GridNode& GN : Row)
-            {
-                GN.SetGridPosition(x,y);
-                ++y;
-            }
-            ++x;
-            std::cout << std::endl;
+            std::cout << "Invalid Height or Width. Please, try again." << std::endl;
+        }
+        else
+        {
+            Grid.resize(X, std::vector<GridNode>(Y));
+            bInvalidInput = false;
         }
     }
+
+    GridWidth = static_cast<int>(Grid.size());
+    GridHeight = static_cast<int>(Grid[0].size());
 }
 
-void BattleField::CreateCharacter(Character& NewChar)
+void BattleField::CreateCharacter()
 {
     float Health;
     float Damage;
     float DamageMultiplier;
     int Movements;
+    int EmpowerCharges;
+    int InvulnerabilityCharges;
     char Icon;
+    int X;
+    int Y;
 
-    std::cout << "Set new Player Health: " << std::endl;
+    ShowMsgReceiveInput(Health, "Set new Character Health: ");
+    ShowMsgReceiveInput(Damage, "Set new Character Damage: ");
+    ShowMsgReceiveInput(DamageMultiplier, "Set new Character Damage Multiplier: ");
+    ShowMsgReceiveInput(Movements, "Set new Character Movements: ");
+    ShowMsgReceiveInput(EmpowerCharges, "Set new Character Empower Charges: ");
+    ShowMsgReceiveInput(InvulnerabilityCharges, "Set new Character Invulnerability Charges: ");
+    ShowMsgReceiveInput(Icon, "Set new Character Icon: ", "Please input a single letter.");
 
-    std::cin >> Health;
-    while (std::cin.fail()) 
+    bool bInvalidInput = true;
+    while(bInvalidInput)
     {
-        std::cout << "Please input a number" << std::endl;
-        std::cin.clear();
-        std::cin.ignore(256, '\n');
-        std::cin >> Health;
+        ShowMsgReceiveInput(X, "Set new Character X Position: ");
+        ShowMsgReceiveInput(Y, "Set new Character Y Position: ");
+        if((X < 0 || Y < 0) || (X > GridWidth || Y > GridHeight))
+        {
+            std::cout << "Coordinates out of range. Please, try again." << std::endl; 
+        }
+        else if(Grid[X][Y].IsNodeOccupied())
+        {
+            std::cout << "Node is occupied. Please, try again." << std::endl;
+        }
+        else
+        {
+            bInvalidInput = false;
+        }
     }
     
-
-    std::cout << "Set new Player Damage: " << std::endl;
-
-    std::cin >> Damage;
-    while (std::cin.fail()) 
-    {
-        std::cout << "Please input a number" << std::endl;
-        std::cin.clear();
-        std::cin.ignore(256, '\n');
-        std::cin >> Damage;
-    }
-
-    std::cout << "Set new Player Damage Multiplier: " << std::endl;
-
-    std::cin >> DamageMultiplier;
-    while (std::cin.fail()) 
-    {
-        std::cout << "Please input a number" << std::endl;
-        std::cin.clear();
-        std::cin.ignore(256, '\n');
-        std::cin >> DamageMultiplier;
-    }
-
-    std::cout << "Set new Player number of Movements: " << std::endl;
-
-    std::cin >> Movements;
-
-    while (std::cin.fail()) 
-    {
-        std::cout << "Please input a number" << std::endl;
-        std::cin.clear();
-        std::cin.ignore(256, '\n');
-        std::cin >> Movements;
-    }
-
-    std::cout << "Set new Player Icon: " << std::endl;
-
-    std::cin >> Icon;
-    while (std::cin.fail()) 
-    {
-        std::cout << "Please input a single letter" << std::endl;
-        std::cin.clear();
-        std::cin.ignore(256, '\n');
-        std::cin >> Icon;
-    }
-    
-    NewChar.SetHealth(10);
-    NewChar.SetBaseDamage(Damage);
-    NewChar.SetDamageMultiplier(DamageMultiplier);
-    NewChar.SetMovement(Movements);
-    NewChar.SetIconAndName(Icon);
-    NumberOfPlayers++;
-    NewChar.SetIndex(NumberOfPlayers);
-    NewChar.Grid = &Grid;
-    
+    NumberOfCharacters++;
     std::cout << "Player Created!" << std::endl << std::endl;
+    CharacterList.emplace_front(std::make_shared<Character>(Health,Damage,DamageMultiplier, Movements, EmpowerCharges, InvulnerabilityCharges, Icon, X,Y, *this));
 }
 
 void BattleField::StartGame()
 {
     DrawGrid();
-    bool IsRunning = true;
+    bool bIsRunning = true;
 
-    char WaitInput;
+    std::string WaitInput;
     std::cout << "Enter any key to start the round..." << std::endl;
     std::cin >> WaitInput;
 
-    while (IsRunning)
+    while (bIsRunning)
     {
-        IsRunning = HandleTurn();
-    }
-    for(Character* a :  CharacterList)
-    {
-        if(a->GetIsDead())
-        {
-            std::cout << "A PLAYER IS DEAD!" << std::endl;
-        }
+        bIsRunning = HandleTurn();
     }
 
+    DrawGrid();
     int Choice;
-    std::cout << "Do you want to start a new game? Yes - 1 / No - 0" << std::endl;
-    std::cin >> Choice;
-
-    while (std::cin.fail()) 
-    {
-        std::cout << "Please input a number" << std::endl;
-        std::cin.clear();
-        std::cin.ignore(256, '\n');
-        std::cin >> Choice;
-    }
-
+    ShowMsgReceiveInput(Choice,"Do you want to start a new game?(Yes - 1 / No - 0): ");
+    
     if (!Choice)
     {
-        bGameRunning = false;
+        bIsGameRunning = false;
     }
     
     ClearGame();
@@ -201,24 +141,24 @@ void BattleField::ClearGame()
     }
     Grid.clear();
     CharacterList.clear();
+    NumberOfCharacters = 0;
+    NumberOfCharactersDead = 0;
 }
 
 bool BattleField::HandleTurn() const
 {
-    char WaitInput;
-    for(Character* a :  CharacterList)
+    std::string WaitInput;
+    for(const std::shared_ptr<Character>& a :  CharacterList)
     {
-        if(a->GetIsDead())
-        {
-            return false;
-        }
-
         a->ExecuteTurn();
         DrawGrid();
         std::cout << "Enter any key to start the next turn..." << std::endl;
         std::cin >> WaitInput;
     }
-
+    if((NumberOfCharacters - 1)  == NumberOfCharactersDead)
+    {
+        return false;
+    }
     return true;
 }
 
@@ -251,4 +191,14 @@ void BattleField::DrawGrid() const
         std::cout << std::endl;
     }
     std::cout << "---------------------------------------------------------------- " << std::endl;
+}
+
+template <typename T>
+void BattleField::ShowMsgReceiveInput(T& Input, const std::string& InputMsg, const std::string& FailMsg)
+{
+    while (std::cout << InputMsg && !(std::cin >> Input)) {
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cout << FailMsg << std::endl;
+    }
 }

@@ -6,12 +6,13 @@ GridNode::GridNode() = default;
 
 GridNode::GridNode(const int InX, const int InY)
 {
-    SetGridPosition(InX, InY);
+    //SetGridPosition(InX, InY);
+    std::cout << "GRID NODE CREATED"  << std::endl;
 }
 
 GridNode::~GridNode()
 {
-    std::cout << "GRID NODE DESTROYED" << GridPosition.x << GridPosition.y << std::endl;
+    std::cout << "GRID NODE DESTROYED"  << std::endl;
 };
 
 void GridNode::SetCharacterInNode(Character& InCharacter)
