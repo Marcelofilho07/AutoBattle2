@@ -1,15 +1,14 @@
-#include "../Public/GridNode.h"
-#include "../Public/Character.h"
-
 #include <iostream>
 #include <ostream>
 #include <cmath>
 #include "../Public/BattleField.h"
+#include "../Public/GridNode.h"
+#include "../Public/Character.h"
 
 Character::Character() = default;
 
-Character::Character(const float& InHealth, const float& InBaseDamage, const float& InDamageMultiplier,
-    const int& InMovement, const int& InEmpowerCharges, const int& InInvulnerabilityCharges, const char& InIcon, const int& InX, const int& InY, BattleField& BF):
+Character::Character(const float InHealth, const float InBaseDamage, const float InDamageMultiplier,
+    const int InMovement, const int InEmpowerCharges, const int InInvulnerabilityCharges, const char InIcon, const int InX, const int InY, BattleField& BF):
     Health(InHealth), MaxHealth(InHealth), BaseDamage(InBaseDamage), DamageMultiplier(InDamageMultiplier),
     Movement(InMovement), EmpowerCharges(InEmpowerCharges), InvulnerabilityCharges(InInvulnerabilityCharges), Icon(InIcon), Battlefield(&BF)
 {
@@ -17,36 +16,7 @@ Character::Character(const float& InHealth, const float& InBaseDamage, const flo
     SetPlayerPosition(InX, InY);
 }
 
-Character::~Character()
-{
-    std::cout << "CHAR DESTROYED" << std::endl;
-}
-
-void Character::SetHealth(const float InHealth)
-{
-    MaxHealth = InHealth;
-    Health = InHealth;
-}
-
-void Character::SetBaseDamage(const float InBaseDamage)
-{
-    BaseDamage = InBaseDamage;
-}
-
-void Character::SetDamageMultiplier(const float InDamageMultiplier)
-{
-    DamageMultiplier = InDamageMultiplier;
-}
-
-void Character::SetMovement(const int InMovement)
-{
-    Movement = InMovement;
-}
-
-void Character::SetIcon(const char InIcon)
-{
-    Icon = InIcon;
-}
+Character::~Character() = default;
 
 void Character::TakeDamage(const float InAmount)
 {
@@ -57,13 +27,16 @@ void Character::TakeDamage(const float InAmount)
         if(Health <= 0)
         {
             std::cout << Icon << " is DEAD!" << std::endl;
+            Battlefield->GetGrid()[CharacterPositionX][CharacterPositionY].ClearNode();
             Battlefield->AddDeadCount();
         }
     }
     else
     {
+        std::cout << Icon << " is invulnerable and takes no damage!" << std::endl;
         IsInvulnerable = false;
-        InvulnerabilityCharges--;
+        --InvulnerabilityCharges;
+        std::cout << Icon << " invulnerability wears off!" << std::endl;
     }
 
     if ((Health * 2 <= MaxHealth) && (Health > 0))
@@ -121,12 +94,13 @@ void Character::MoveTo(const int InX, const int InY)
         CharacterPositionX = InX;
         CharacterPositionY = InY;
         Battlefield->GetGrid()[CharacterPositionX][CharacterPositionY].SetCharacterInNode(*this);
+        std::cout << Icon << " moves to " << CharacterPositionX << ", " << CharacterPositionY <<"!" << std::endl;
     }
 }
 
 void Character::SetPlayerPosition(const int InX, const int InY)
 {
-    if (!Battlefield->GetGrid()[InX][InX].IsNodeOccupied())
+    if (!Battlefield->GetGrid()[InX][InY].IsNodeOccupied())
     {
         CharacterPositionX = InX;
         CharacterPositionY = InY;
@@ -134,14 +108,9 @@ void Character::SetPlayerPosition(const int InX, const int InY)
     }
 }
 
-void Character::SetBattlefield(BattleField& BF)
-{
-    Battlefield = &BF;
-}
-
 void Character::Empower()
 {
-    if (EmpowerCharges)
+    if (EmpowerCharges > 0)
     {
         IsEmpower = true;        
         std::cout << "Character " << Icon << " is Empowered!" << std::endl;
@@ -150,7 +119,7 @@ void Character::Empower()
 
 void Character::Invulnerable()
 {
-    if (InvulnerabilityCharges)
+    if (InvulnerabilityCharges > 0)
     {
         IsInvulnerable = true;
         std::cout << "Character " << Icon << " is Invulnerable!" << std::endl;
@@ -162,10 +131,12 @@ void Character::ExecuteTurn()
 {
     if (!GetIsDead())
     {
+        std::cout << "Character " << Icon << " turn." << std::endl;
         if(Target.expired())
         {
             if(!FindTarget())
             {
+                std::cout << "Character " << Icon << " waits." << std::endl;
                 return;
             }
         }
@@ -175,22 +146,20 @@ void Character::ExecuteTurn()
         {
             if(!FindTarget())
             {
+                std::cout << "Character " << Icon << " waits." << std::endl;
                 return;
             }
         }
 
-        bool CanAttack = true;
         if (IsTargetInRange())
         {
             Attack();
-            CanAttack = false;
-        }
-        else
-        {
-            Walk(Tg->CharacterPositionX - CharacterPositionX, Tg->CharacterPositionY - CharacterPositionY);
+            return;
         }
 
-        if (IsTargetInRange() && CanAttack)
+        Walk(Tg->CharacterPositionX - CharacterPositionX, Tg->CharacterPositionY - CharacterPositionY);
+
+        if (IsTargetInRange())
         {
             Attack();
         }
@@ -217,12 +186,12 @@ bool Character::FindTarget()
     int MinDistanceY = static_cast<int>(Battlefield->GetGrid()[0].size());
     for(const std::shared_ptr<Character>& Character : Battlefield->GetCharList())
     {
-        if((Character->CharacterPositionX - CharacterPositionX) != 0 && (Character->CharacterPositionY - CharacterPositionY) != 0 &&
+        if(!((Character->CharacterPositionX - CharacterPositionX) == 0 && (Character->CharacterPositionY - CharacterPositionY) == 0) &&
             std::abs(Character->CharacterPositionX - CharacterPositionX) < MinDistanceX && std::abs(Character->CharacterPositionY - CharacterPositionY) < MinDistanceY &&
             !Character->GetIsDead())
         {
-            MinDistanceX = (Character->CharacterPositionX - CharacterPositionX);
-            MinDistanceY = (Character->CharacterPositionY - CharacterPositionY);
+            MinDistanceX = std::abs(Character->CharacterPositionX - CharacterPositionX);
+            MinDistanceY = std::abs(Character->CharacterPositionY - CharacterPositionY);
             Target = Character;
         }
     }
@@ -236,15 +205,17 @@ bool Character::FindTarget()
 void Character::Attack() 
 {
     const auto Tg = Target.lock();
-    std::cout << Icon << " attacks " << Tg->GetIcon() << "!" << std::endl;
     if (IsEmpower)
     {
+        std::cout << Icon << " attacks " << Tg->GetIcon() << " with an empowered strike!" << std::endl;
         Tg->TakeDamage(BaseDamage * 2);
         IsEmpower = false;
-        EmpowerCharges--;
+        --EmpowerCharges;
+        std::cout << "Character " << Icon << " is no longer Empowered!" << std::endl;
     }
     else
     {
+        std::cout << Icon << " attacks " << Tg->GetIcon() << "!" << std::endl;
         Tg->TakeDamage(BaseDamage);
     }
 }

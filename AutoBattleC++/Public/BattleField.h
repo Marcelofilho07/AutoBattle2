@@ -1,11 +1,11 @@
 #pragma once
 #include "../Public/GridNode.h"
-#include "../Public/Character.h"
 #include <forward_list>
 #include <memory>
 #include <string>
 #include <vector>
 
+class Character;
 
 class BattleField
 {
@@ -32,6 +32,8 @@ private:
 	void CreateGrid();
 
 	void CreateCharacter();
+	
+	void CreatePreDefinedCharacter();
 
 	void StartGame();
 
@@ -43,6 +45,8 @@ private:
 
 	template<typename T>
 	void ShowMsgReceiveInput(T& Input, const std::string& InputMsg, const std::string& FailMsg = "Invalid type! Please try again!");
+
+	void Countdown(const int Time) const;
 };
 
 

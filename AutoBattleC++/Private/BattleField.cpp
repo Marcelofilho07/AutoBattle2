@@ -1,6 +1,8 @@
 #include "../Public/BattleField.h"
 #include "../Public/Character.h"
 #include <iostream>
+#include <thread>
+#include <chrono>
 
 BattleField::BattleField() = default;
 
@@ -14,10 +16,14 @@ void BattleField::Setup()
         {
             int NewCharInput;
             std::cout << "Number of Characters: " << NumberOfCharacters << std::endl;
-            ShowMsgReceiveInput(NewCharInput, "Do you want to add a new character?(1- Yes, 0- No): ", "Please input a number.");
-            if(NewCharInput)
+            ShowMsgReceiveInput(NewCharInput, "Do you want to add a new character?(1- Yes, 0- No, 2- Create Predefined Character): ", "Please input a number.");
+            if(NewCharInput == 1)
             {
                 CreateCharacter();
+            }
+            else if(NewCharInput == 2)
+            {
+                CreatePreDefinedCharacter();
             }
             else
             {
@@ -25,10 +31,6 @@ void BattleField::Setup()
             }
         }
         
-        for(const std::shared_ptr<Character>& ch : CharacterList)
-        {
-            std::cout << ch->GetIcon() << std::endl;
-        }
         StartGame();
     }
 }
@@ -45,8 +47,8 @@ void BattleField::CreateGrid()
     bool bInvalidInput = true;
     while(bInvalidInput)
     {
-        ShowMsgReceiveInput(X, "Set Grid Width: ", "Please input a number.");
-        ShowMsgReceiveInput(Y, "Set Grid Height: ", "Please input a number.");
+        ShowMsgReceiveInput(X, "Set Grid Height: ", "Please input a number.");
+        ShowMsgReceiveInput(Y, "Set Grid Width: ", "Please input a number.");
 
         if ((X <= 1 && Y <= 1) || (X == 0 || Y == 0))
         {
@@ -59,8 +61,8 @@ void BattleField::CreateGrid()
         }
     }
 
-    GridWidth = static_cast<int>(Grid.size());
-    GridHeight = static_cast<int>(Grid[0].size());
+    GridHeight = static_cast<int>(Grid.size());
+    GridWidth = static_cast<int>(Grid[0].size());
 }
 
 void BattleField::CreateCharacter()
@@ -81,14 +83,16 @@ void BattleField::CreateCharacter()
     ShowMsgReceiveInput(Movements, "Set new Character Movements: ");
     ShowMsgReceiveInput(EmpowerCharges, "Set new Character Empower Charges: ");
     ShowMsgReceiveInput(InvulnerabilityCharges, "Set new Character Invulnerability Charges: ");
-    ShowMsgReceiveInput(Icon, "Set new Character Icon: ", "Please input a single letter.");
+    ShowMsgReceiveInput(Icon, "Set new Character Icon: ", "Please input a single letter."); //know issue: passing more then 1 letter causes buffer overload.
 
     bool bInvalidInput = true;
     while(bInvalidInput)
     {
+        std::cout << "X Axis -> Vertical" << std::endl;
+        std::cout << "Y Axis -> Horizontal" << std::endl;
         ShowMsgReceiveInput(X, "Set new Character X Position: ");
         ShowMsgReceiveInput(Y, "Set new Character Y Position: ");
-        if((X < 0 || Y < 0) || (X > GridWidth || Y > GridHeight))
+        if((X < 0 || Y < 0) || (X >= GridHeight || Y >= GridWidth))
         {
             std::cout << "Coordinates out of range. Please, try again." << std::endl; 
         }
@@ -107,21 +111,58 @@ void BattleField::CreateCharacter()
     CharacterList.emplace_front(std::make_shared<Character>(Health,Damage,DamageMultiplier, Movements, EmpowerCharges, InvulnerabilityCharges, Icon, X,Y, *this));
 }
 
+void BattleField::CreatePreDefinedCharacter()
+{
+    char Icon;
+    int X;
+    int Y;
+
+    ShowMsgReceiveInput(Icon, "Set new Character Icon: ", "Please input a single letter.");
+    
+    bool bInvalidInput = true;
+    while(bInvalidInput)
+    {
+        std::cout << "X Axis -> Vertical" << std::endl;
+        std::cout << "Y Axis -> Horizontal" << std::endl;
+        ShowMsgReceiveInput(X, "Set new Character X Position: ");
+        ShowMsgReceiveInput(Y, "Set new Character Y Position: ");
+        if((X < 0 || Y < 0) || (X >= GridHeight || Y >= GridWidth))
+        {
+            std::cout << "Coordinates out of range. Please, try again." << std::endl; 
+        }
+        else if(Grid[X][Y].IsNodeOccupied())
+        {
+            std::cout << "Node is occupied. Please, try again." << std::endl;
+        }
+        else
+        {
+            bInvalidInput = false;
+        }
+    }
+    
+    NumberOfCharacters++;
+    std::cout << "Player Created!" << std::endl << std::endl;
+    CharacterList.emplace_front(std::make_shared<Character>(10.f,1.f,1.f, 1, 1, 1, Icon, X,Y, *this));
+}
+
 void BattleField::StartGame()
 {
     DrawGrid();
     bool bIsRunning = true;
-
-    std::string WaitInput;
-    std::cout << "Enter any key to start the round..." << std::endl;
-    std::cin >> WaitInput;
+    std::cout << "Game Starting in..." << std::endl;
+    Countdown(5);
 
     while (bIsRunning)
     {
         bIsRunning = HandleTurn();
     }
-
-    DrawGrid();
+    for(const std::shared_ptr<Character>& a :  CharacterList)
+    {
+        if(!a->GetIsDead())
+        {
+            std::cout << "Character " << a->GetIcon() << " is Victorious!" << std::endl;
+        }
+    }
     int Choice;
     ShowMsgReceiveInput(Choice,"Do you want to start a new game?(Yes - 1 / No - 0): ");
     
@@ -147,15 +188,16 @@ void BattleField::ClearGame()
 
 bool BattleField::HandleTurn() const
 {
-    std::string WaitInput;
     for(const std::shared_ptr<Character>& a :  CharacterList)
     {
-        a->ExecuteTurn();
-        DrawGrid();
-        std::cout << "Enter any key to start the next turn..." << std::endl;
-        std::cin >> WaitInput;
+        if(!a->GetIsDead())
+        {
+            a->ExecuteTurn();
+            DrawGrid();
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
     }
-    if((NumberOfCharacters - 1)  == NumberOfCharactersDead)
+    if((NumberOfCharacters - 1)  <= NumberOfCharactersDead)
     {
         return false;
     }
@@ -164,33 +206,31 @@ bool BattleField::HandleTurn() const
 
 void BattleField::DrawGrid() const
 {
-    int x = 0;
     for(const std::vector<GridNode>& Row : Grid)
     {
-        int y = 0;
         for(const GridNode& GN : Row)
         {
             if(GN.IsNodeOccupied())
             {
-                if (GN.GetCharInNode()->GetIsDead())
-                {
-                    std::cout << "[" << "X" << "] ";
-                }
-                else
-                {
-                    std::cout << "[" << GN.GetCharInNode()->GetIcon() << "] ";
-                }
+                std::cout << "[" << GN.GetCharInNode()->GetIcon() << "] ";
             }
             else
             {
-                std::cout << "[ " << x << ", " << y << " ] ";
+                std::cout << "[ ] ";
             }
-            ++y;
         }
-        ++x;
         std::cout << std::endl;
     }
     std::cout << "---------------------------------------------------------------- " << std::endl;
+}
+
+void BattleField::Countdown(const int Time) const
+{
+    for(int i = Time; i > 0; --i)
+    {
+        std::cout << i << " seconds..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
 }
 
 template <typename T>
