@@ -83,7 +83,7 @@ void BattleField::CreateCharacter()
     ShowMsgReceiveInput(Movements, "Set new Character Movements: ");
     ShowMsgReceiveInput(EmpowerCharges, "Set new Character Empower Charges: ");
     ShowMsgReceiveInput(InvulnerabilityCharges, "Set new Character Invulnerability Charges: ");
-    ShowMsgReceiveInput(Icon, "Set new Character Icon: ", "Please input a single letter."); //know issue: passing more then 1 letter causes buffer overload.
+    ShowMsgReceiveInput(Icon, "Set new Character Icon: ", "Please input a single letter.");
 
     bool bInvalidInput = true;
     while(bInvalidInput)
