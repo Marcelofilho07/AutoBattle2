@@ -245,7 +245,7 @@ This doesn't work. Just print an empty grid. Also causes memory leak.
 
 This class contains a Struct and a Enum. Both of those data structeres doesn't make sense to be stored togheter inside a class. They should be declared somewhere else, for example in the Battlefield class.
 
-In our final interation we don't use this class. It has been deleted.
+In our final interation we don't use this class. It has been deleted. Instead of the GridBox struct, we use a class called GridNode to represent each area inside the grid.
 
 # Conclusion
 
