@@ -247,7 +247,7 @@ This class contains a Struct and a Enum. Both of those data structeres doesn't m
 
 In our final interation we don't use this class. It has been deleted.
 
-# Conlcusion
+# Conclusion
 
 The original project has a lot of problems from memory, efficiency and doesn't work at all.
 Bad includes, stack overflow problems, memory leaks, wrong usage of types. All those problems were solved in our final interation and the game should run properly.
