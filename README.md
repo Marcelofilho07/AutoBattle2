@@ -3,7 +3,7 @@
 ## Introduction
 This is an Auto Battler made in C++ for a recruitment process at Kokku. In this file I'll document all changes made to the original project and how each class is working now.
 
-The game follow all rules from the requisite document, except for a need of a "Index" variable which I have found no use for it and it could be said it has an arbitrary decision by the fact that the turn order is decided by how the characters are created. Also, I don't folllow a class system. Each character can have their own customizible attributes. For the extra feature, I'm from 27/12/1997 so I've added an Invulnerable (take no damage) and an Empower (more damage) state to each character.
+The game follow all rules from the requisite document, except for a need of a "Index" variable which I have found no use for and it could be said it has an arbitrary decision by the fact that the turn order is decided by how the characters are created. Also, I don't folllow a class system. Each character can have their own customizable values for each attribute. For the extra feature, I'm from 27/12/1997 so I've added an Invulnerable (take no damage) and an Empower (more damage) state to each character.
 
 For variable and functions names I'm trying to follow the Unreal Engine coding [guidelines](https://docs.unrealengine.com/4.26/en-US/ProductionPipelines/DevelopmentSetup/CodingStandard/)
 ## AutoBattleC++.cpp
@@ -38,8 +38,8 @@ int main()
 
 ## BattleField.h
 
-Once again, some unnecessary includes. First iostream for the same previous reason, we're not using it. "Grid.h" could be forward declared since we're only using a pointer to it here.
-I like to avoid using "using namespace" so I will also be removed.
+Once again, some unnecessary includes. First, iostream for the same previous reason, we're not using it. "Grid.h" could be forward declared since we're only using a pointer to it here.
+I like to avoid using "using namespace" so it will also be removed.
 
 For the class itself, all members are declared as public. We're going to change this and expose as public only what is needed like the Setup function and some getters.
 For the members we are going to make a lot of changes.
@@ -54,11 +54,11 @@ For the members we are going to make a lot of changes.
 	int currentTurn;
 	int numberOfPossibleTiles;
 ```
-There is no need for this huge space between "Grid" and "*". Also when we get further in this document we'll see that we're no longer using a Grind class.
+There is no need for this huge space between "Grid" and "*". Also when we get further in this document we'll see that we're no longer using a Grid class.
 
 This "Types::Gridbox" definition seens very weird so we're changing it in the future.
 
-A list<Character> is good option for a container to hold AllPlayer, but there is no need to a be pointer to a List. We're changing this and using a forward list since there is no need to use a double-linked list.
+A list<Character> is good option for a container to hold AllPlayers, but there is no need to a be pointer to a List. We're changing this and using a forward list since there is no need to use a double-linked list.
 
 A shared_ptr to hold our players data can be good since we might share them with other classes, but we should't have a pointer to a shared_ptr like for the EnemyCharacter and we're also making other changes to this.
 
@@ -68,7 +68,7 @@ And of course, remove all unnecessary comments.
 
 For functions I believe there isn't a lot of problems worth mentioning, besides making some of then const. There will be a lot of changes.
 
-Our [final interation](https://github.com/Marcelofilho07/AutoBattle2/blob/master/AutoBattleC%2B%2B/Public/BattleField.h) is much cleaner and have only what we need.
+Our final interation is much cleaner and have only what we need.
 We have a clear separation between private and public members. No unnecessary includes.
 
 ```
@@ -84,7 +84,7 @@ For our variables:
 
 Our Grid no longer is a class, but a Vector of a Vector of GridNodes. We are using a vector here since we can have direct acess in O[1] and we can resize the container at our will.
 
-Our Players and "AllPlayers" variables have been merged in a single forward_list of shared_ptr of Character. We're using shared_ptr since we're sharing ownership of this pointer between the list itself, other characters and the GridNode it is staying.
+Our Players and "AllPlayers" variables have been merged in a single forward_list of shared_ptr of Character. We're using shared_ptr since we're sharing ownership of this pointer between the list itself, other characters and the GridNode it is staying in.
 
 At last we have some support variables.
 
@@ -107,7 +107,7 @@ Here our player will be prompted the size of the grid and if they want to add an
 
 ### GetPlayerChoice()
 
-This function has a lot of problem. First it doesn't do anything. It is using old C-style printing instead with printf.
+This function has a lot of problem. First it doesn't do anything. It is using old C-style printing with printf.
 ```
     std::getline(std::cin, choice);
     
@@ -122,14 +122,14 @@ if(choice > 1 && choice < 5)
     CreatePlayerCharacter(choice);
 }
 ```
-But choice is a string and CreatePlayerCharacter recieves an integer as parameter, so there is a wrong type problem.
-Lastly, the default case calls itself where can lead to stackoverflow problem. A simple loop would solve this problem.
+But choice is a string and CreatePlayerCharacter() recieves an integer as parameter, so there is a wrong type problem.
+Lastly, the default case calls itself where can lead to stack overflow problem. A simple loop would solve this problem.
 
 In our final interation this function has been deleted and it's functionality merged into CreateCharacter().
 
 ### CreatePlayerCharacter(int classIndex)
 
-First, this function try to do a old C-Style cast from a integer to a pointer.
+First, this function try to do an old C-Style cast from an integer to a pointer.
 After, it tries to contruct a shared pointer of type Character using a pointer intead of the right type.
 At last it calls CreateEnemyCharacter().
 
@@ -138,10 +138,10 @@ In our final interation this function has been deleted and it's functionality me
 ### CreateEnemyCharacter()
 
 This functions calls another fuction(GetRandomInt) triggering a infinite function call loop
-creating a stackoverflow error. Again, it uses a old C-Style cast. After it tries to initialize a
+creating a stack overflow error. Again, it uses a old C-Style cast. After it tries to initialize a
 a raw pointer to shared_ptr using a raw pointer to Character. It rewrites the other player data and
-at last it calls StartGame(). Calling another function inside a function recursivile is a repeating pattern in this code
-and also a bad practice, because it doens't let the memory be freed and is very confusing to read.
+at last it calls StartGame(). Calling another function inside a function recursively is a repeating pattern in this code
+and also a bad practice, because it doesn't let the memory be freed and is very confusing to read.
 
 In our final interation this function has been deleted and it's functionality merged into CreateCharacter().
 
@@ -151,15 +151,15 @@ This is our interpretation of how those previous classes should be implemented. 
 
 ### StartGame()
 
-Here things doens't work because of previous wrong types. It calls AlocatePlayers() and StartTurn.
+Here things doens't work because of previous wrong types. It calls AlocatePlayers() and StartTurn().
 
-In our final interation, this class is only resposible to call the turns of the game and ask if the player wants to play again.
+In our final interation, this class is only responsible to call the turns of the game and ask if the player wants to play again.
 
 ### StartTurn()
 
 Besides an empty if and calling another function in a chain of functions, this function is ok.
 
-In our final interation this function has been deleted and it's functionality merged into HandleTurn().
+In our final interation this function has been deleted and its functionality merged into HandleTurn().
 
 ### HandleTurn()
 
@@ -193,11 +193,11 @@ Draws the grid.
 
 ### ShowMsgReceiveInput(T& Input, const std::string& InputMsg, const std::string& FailMsg)() [NEW FUNCTION]
 
-Properly treat input from player. Uses template.
+Properly handles input from player. Uses template.
 
 ## Character.h
 
-Going forward, I belive the errors gonna repeat it self, so I'll be more direct on them.
+Going forward, I belive the errors are going to repeat a lot, so I'll be more direct on them.
 
 For this header, again wrong includes. Adding "Character.h" to itself. Missing "vector" include.
 All members are public, exposing unnecessary data. Many unnecessary comments.
@@ -208,9 +208,9 @@ Our final interation has proper includes, visibiliy and only necessary functions
 
 ### Character(Types::CharacterClass charcaterClass)
 
-This Parameterized Constructor is missing to iniatlize variables.
+This Parameterized Constructor is missing to initialize variables.
 
-In our final interation, we use a proper list initialization.
+In our final interation, we use a proper list-initialization.
 
 ### StartTurn(Grid* battlefield)
 
@@ -252,5 +252,5 @@ In our final interation we don't use this class. It has been deleted. Instead of
 The original project has a lot of problems from memory, efficiency and doesn't work at all.
 Bad includes, stack overflow problems, memory leaks, wrong usage of types. All those problems were solved in our final interation and the game should run properly.
 There is a minor know issue regarding input: Inputting 2 or more chars of different type may cause the buffer to overflow with the inputs after the first one is read.
-I hope you enjoy my project and I looking forward a feedback.
 
+I hope you enjoy my project and I looking forward a feedback.
